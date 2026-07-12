@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hedma - Cyber Premium Store</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <div class="logo-area" onclick="switchScreen('catalog')">
+            <span>HEDMA</span>
+        </div>
+        
+        <div class="nav-links">
+            <a onclick="filterCatalog('T-Shirts')">T-Shirts</a>
+            <a onclick="filterCatalog('Shoes')">Shoes</a>
+            <a onclick="filterCatalog('Pants')">Pants</a>
+            <a onclick="filterCatalog('Caps')">Caps</a>
+            <a onclick="filterCatalog('Belts')">Belts</a>
+        </div>
+
+        <div class="right-nav">
+            <nav id="nav-actions">
+                <button id="auth-nav-btn" onclick="switchScreen('login')">Owner Login</button>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+
+        <section id="screen-login" class="screen">
+            <div class="login-card">
+                <h2>Hedma Secure Access</h2>
+                <p class="login-subtitle">Connect to the admin inventory manager</p>
+                <form id="login-form" onsubmit="handleLogin(event)">
+                    <div class="input-group">
+                        <label>Owner Username</label>
+                        <input type="text" id="login-email" required placeholder="owner" autocomplete="off">
+                    </div>
+                    <div class="input-group">
+                        <label>Security Password</label>
+                        <input type="password" id="login-pass" required placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="btn-cyber">Verify Account</button>
+                </form>
+            </div>
+        </section>
+
+        <section id="screen-owner" class="screen">
+            <div class="dashboard-grid">
+                <div class="panel-cyber">
+                    <h3 id="panel-title">Product Control Form</h3>
+                    <form id="product-form" onsubmit="handleProductSubmit(event)">
+                        <input type="hidden" id="edit-index" value="">
+                        
+                        <div class="input-group">
+                            <label>Clothing Item Name</label>
+                            <input type="text" id="prod-name" required placeholder="Premium Cotton Hoodie">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label>Product Category</label>
+                            <select id="prod-cat" required>
+                                <option value="T-Shirts">T-Shirts</option>
+                                <option value="Shoes">Shoes</option>
+                                <option value="Pants">Pants</option>
+                                <option value="Caps">Caps</option>
+                                <option value="Belts">Belts</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Price (EGP)</label>
+                            <input type="number" id="prod-price" required placeholder="850">
+                        </div>
+                        <div class="input-group">
+                            <label>Stock Quantity</label>
+                            <input type="number" id="prod-qty" required placeholder="25">
+                        </div>
+                        
+                        <div class="file-upload-wrapper">
+                            <label for="prod-image" class="file-upload-label" id="file-label">
+                                Upload Product Image Asset
+                            </label>
+                            <input type="file" id="prod-image" accept="image/*" style="display:none;" onchange="processImage(this)">
+                        </div>
+                        
+                        <button type="submit" class="btn-cyber" id="btn-submit-prod">Save Item To Store</button>
+                        <div id="action-msg"></div>
+                    </form>
+                </div>
+
+                <div class="panel-cyber">
+                    <h3>Store Inventory Database</h3>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Image</th>
+                                    <th>Product Name</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>Stock</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-table-body">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="screen-catalog" class="screen active">
+            <div class="catalog-header">
+                <h1 onclick="filterCatalog('all')" style="cursor:pointer;">HEDMA STORE</h1>
+                <p style="color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px;">Premium Men's Clothing</p>
+            </div>
+
+            <div class="products-grid" id="catalog-products-grid">
+                </div>
+        </section>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
