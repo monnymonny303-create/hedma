@@ -15,21 +15,38 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
+// تهيئة مكتبة إرسال الإيميلات - EmailJS باستخدام البابلك كي الصحيح
+emailjs.init("dwHjyiLnczefKVhpI");
+
 let dbProducts = [];
 let base64ImageStr = "";
 let isOwnerSession = false;
 let currentFilter = "all";
 
+// بيانات العميل المحلي
+let customerName = "";
+let customerPhone = "";
+let cart = [];
+
 // ==========================================
 // 2. المزامنة السحابية اللحظية (Realtime Synchronization)
 // ==========================================
 window.addEventListener("DOMContentLoaded", () => {
-    // جلب البيانات من السحابة في ثوانٍ، وأي تحديث ينعكس فوراً على كل الأجهزة
+    // التحقق مما إذا كانت بيانات العميل محفوظة مسبقاً لعدم إظهار النافذة مجدداً
+    const cachedName = localStorage.getItem("cust_name");
+    const cachedPhone = localStorage.getItem("cust_phone");
+    if (cachedName && cachedPhone) {
+        customerName = cachedName;
+        customerPhone = cachedPhone;
+        document.getElementById("customer-gate").style.display = "none";
+    }
+
+    // جلب البيانات من السحابة في ثوانٍ
     database.ref('products').on('value', (snapshot) => {
         const data = snapshot.val();
         if (data) {
             dbProducts = Object.keys(data).map(key => ({
-                id: key, // مفتاح المنتج الفريد المخزن بالكامل على السيرفر لتعديله أو مسحه
+                id: key, 
                 ...data[key]
             }));
         } else {
@@ -39,6 +56,18 @@ window.addEventListener("DOMContentLoaded", () => {
         refreshAdminGrid();
     });
 });
+
+// حفظ بيانات العميل عند الدخول لأول مرة
+function saveCustomerData(e) {
+    e.preventDefault();
+    customerName = document.getElementById("cust-name").value.trim();
+    customerPhone = document.getElementById("cust-phone").value.trim();
+
+    localStorage.setItem("cust_name", customerName);
+    localStorage.setItem("cust_phone", customerPhone);
+
+    document.getElementById("customer-gate").style.display = "none";
+}
 
 // توجيه الشاشات
 function switchScreen(screenId) {
@@ -109,16 +138,14 @@ function handleProductSubmit(e) {
         return;
     }
 
-    let productData = { name, category, price, qty };
+    let productData = { name, category, price: Number(price), qty: Number(qty) };
 
     if(editIdx === "") {
-        // دفع منتج جديد للسيرفر السحابي ليعرض فوراً
         productData.image = base64ImageStr;
         database.ref('products').push(productData);
         msgBox.innerText = "Product Synchronized to Cloud!";
         msgBox.style.color = "var(--neon-cyan)";
     } else {
-        // تحديث المنتج الحالي على الفايربيز عن طريق معرفه الفريد (id)
         let idx = parseInt(editIdx);
         let productId = dbProducts[idx].id;
         
@@ -184,7 +211,7 @@ function refreshCatalogGrid() {
                             <span>${product.qty} Pcs</span>
                         </div>
                     </div>
-                    <button class="btn-buy" onclick="alert('Item added to shopping node processing')">Buy Now</button>
+                    <button class="btn-buy" onclick="addToCart('${product.id}')">Add to Basket</button>
                 </div>
             </div>
         `;
@@ -228,13 +255,148 @@ function triggerEditProduct(idx) {
     document.getElementById("file-label").innerText = "Keep asset or load replacement";
 }
 
-// ==========================================
-// 4. حذف المنتجات سحابياً بشكل فوري
-// ==========================================
 function triggerDeleteProduct(idx) {
     if(confirm("Are you sure you want to completely remove this item from the cloud database?")) {
         let productId = dbProducts[idx].id;
         database.ref('products/' + productId).remove();
         resetFormState();
     }
+}
+
+// ==========================================
+// 4. نظام سلة المشتريات والخصم وإرسال البريد الإلكتروني
+// ==========================================
+
+function toggleCart() {
+    document.getElementById("cart-sidebar").classList.toggle("open");
+}
+
+function addToCart(productId) {
+    const product = dbProducts.find(p => p.id === productId);
+    if (!product) return;
+
+    if (product.qty <= 0) {
+        alert("⚠️ Sorry, this item is out of stock!");
+        return;
+    }
+
+    const cartItem = cart.find(item => item.id === productId);
+    if (cartItem) {
+        if (cartItem.qtyAdded >= product.qty) {
+            alert(`⚠️ Only ${product.qty} units available in stock.`);
+            return;
+        }
+        cartItem.qtyAdded += 1;
+    } else {
+        cart.push({
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            image: product.image,
+            qtyAdded: 1
+        });
+    }
+
+    updateCartUI();
+    alert("⚡ Added to your shopping node!");
+}
+
+function updateCartUI() {
+    const container = document.getElementById("cart-items-container");
+    container.innerHTML = "";
+
+    let total = 0;
+    let count = 0;
+
+    cart.forEach((item, idx) => {
+        total += item.price * item.qtyAdded;
+        count += item.qtyAdded;
+
+        container.innerHTML += `
+            <div class="cart-item">
+                <img src="${item.image}" alt="${item.name}">
+                <div class="cart-item-details">
+                    <h4>${item.name}</h4>
+                    <p>${item.price} EGP &times; ${item.qtyAdded}</p>
+                </div>
+                <button class="remove-cart-item" onclick="removeFromCart(${idx})">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </div>
+        `;
+    });
+
+    document.getElementById("cart-count").innerText = count;
+    document.getElementById("cart-total-price").innerText = `${total} EGP`;
+}
+
+function removeFromCart(idx) {
+    cart.splice(idx, 1);
+    updateCartUI();
+}
+
+// إتمام الشراء ونقص الكمية من الفايربيز وإرسال الطلب سحابياً
+function processCheckout() {
+    if (cart.length === 0) {
+        alert("🛒 Your basket is empty.");
+        return;
+    }
+
+    if (confirm("Are you sure you want to confirm your order and authorize purchase?")) {
+        
+        let orderSummary = "";
+        let totalPrice = 0;
+        let stockCheckPassed = true;
+
+        // التحقق أولاً من توفر الكميات المطلوبة لكل المنتجات قبل الخصم الفعلي
+        cart.forEach(cartItem => {
+            const originalProduct = dbProducts.find(p => p.id === cartItem.id);
+            if (!originalProduct || originalProduct.qty < cartItem.qtyAdded) {
+                stockCheckPassed = false;
+                alert(`⚠️ Sorry, the stock for "${cartItem.name}" has changed and is no longer sufficient.`);
+            }
+        });
+
+        if (!stockCheckPassed) return;
+
+        // 1. عملية إنقاص الكميات الآمنة من الـ Firebase
+        cart.forEach(cartItem => {
+            const originalProduct = dbProducts.find(p => p.id === cartItem.id);
+            if (originalProduct) {
+                const newQty = originalProduct.qty - cartItem.qtyAdded;
+                database.ref('products/' + cartItem.id + '/qty').set(newQty >= 0 ? newQty : 0);
+            }
+            orderSummary += `- ${cartItem.name} (${cartItem.qtyAdded} Pcs) - ${cartItem.price * cartItem.qtyAdded} EGP\n`;
+            totalPrice += cartItem.price * cartItem.qtyAdded;
+        });
+
+        // 2. إعداد وإرسال البريد الإلكتروني للمالك
+        const emailParams = {
+            to_name: "Store Owner",
+            customer_name: customerName,
+            customer_phone: customerPhone,
+            order_details: orderSummary,
+            total_price: `${totalPrice} EGP`
+        };
+
+        emailjs.send("service_sgecnvb", "template_4ma6eyd", emailParams)
+            .then(() => {
+                alert(`🎉 Order Completed!\nThank you ${customerName}. The owner has been notified.`);
+                cart = [];
+                updateCartUI();
+                toggleCart();
+            })
+            .catch((error) => {
+                console.error("Mail Error:", error);
+                alert(`🎉 Order Registered and Stock Updated!\nThank you ${customerName}.`);
+                cart = [];
+                updateCartUI();
+                toggleCart();
+            });
+    }
+}
+// دالة فتح وإغلاق القائمة في الموبايل
+function toggleMobileMenu() {
+    const navMenu = document.getElementById("nav-menu");
+    navMenu.classList.toggle("active");
 }

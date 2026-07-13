@@ -3,65 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hedma - Cyber Premium Store</title>
+    <title>HEDMA STORE</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
 <body>
 
-    <header>
-        <div class="logo-area" onclick="switchScreen('catalog')">
-            <span>HEDMA</span>
+    <div id="customer-gate" class="gate-overlay">
+        <div class="gate-card">
+            <h2>HEDMA STORE</h2>
+            <p>Please authorize your communication details to enter.</p>
+            <form onsubmit="saveCustomerData(event)">
+                <input type="text" id="cust-name" placeholder="Your Name" required>
+                <input type="tel" id="cust-phone" placeholder="Your Phone Number" required>
+                <button type="submit">Establish Connection</button>
+            </form>
+        </div>
+    </div>
+
+    <header class="cyber-header">
+        <div class="brand" onclick="filterCatalog('all')">
+            <span class="logo-text">HED<span class="magenta-text">MA</span></span>
         </div>
         
-        <div class="nav-links">
-            <a onclick="filterCatalog('T-Shirts')">T-Shirts</a>
-            <a onclick="filterCatalog('Shoes')">Shoes</a>
-            <a onclick="filterCatalog('Pants')">Pants</a>
-            <a onclick="filterCatalog('Caps')">Caps</a>
-            <a onclick="filterCatalog('Belts')">Belts</a>
-        </div>
+        <button class="menu-toggle" id="menu-toggle-btn" onclick="toggleMobileMenu()">
+            <i class="fa-solid fa-bars"></i>
+        </button>
 
-        <div class="right-nav">
-            <nav id="nav-actions">
-                <button id="auth-nav-btn" onclick="switchScreen('login')">Owner Login</button>
-            </nav>
+        <nav class="nav-links" id="nav-menu">
+            <button onclick="filterCatalog('all')">All Products</button>
+            <button onclick="filterCatalog('T-Shirts')">T-Shirts</button>
+            <button onclick="filterCatalog('Shoes')">Shoes</button>
+            <button onclick="filterCatalog('Pants')">Pants</button>
+            <button onclick="filterCatalog('Caps')">Caps</button>
+            <button onclick="filterCatalog('Belts')">Belts</button>
+        </nav>
+        
+        <div class="header-right">
+            <div class="nav-right" id="nav-actions">
+                <button id="auth-nav-btn" class="btn-login-style" onclick="switchScreen('login')">Owner Login</button>
+            </div>
+            <div class="cart-trigger" onclick="toggleCart()">
+                <i class="fa-solid fa-basket-shopping"></i>
+                <span id="cart-count">0</span>
+            </div>
         </div>
     </header>
 
-    <div class="container">
+    <main class="viewport">
+        
+        <section id="screen-catalog" class="screen active">
+            <div class="hero-section">
+                <h1>HEDMA STORE</h1>
+                <p class="subtitle">PREMIUM MEN'S CLOTHING</p>
+            </div>
+            <div id="catalog-products-grid" class="products-grid">
+                </div>
+        </section>
 
         <section id="screen-login" class="screen">
-            <div class="login-card">
-                <h2>Hedma Secure Access</h2>
-                <p class="login-subtitle">Connect to the admin inventory manager</p>
-                <form id="login-form" onsubmit="handleLogin(event)">
-                    <div class="input-group">
-                        <label>Owner Username</label>
-                        <input type="text" id="login-email" required placeholder="owner" autocomplete="off">
-                    </div>
-                    <div class="input-group">
-                        <label>Security Password</label>
-                        <input type="password" id="login-pass" required placeholder="••••••••">
-                    </div>
-                    <button type="submit" class="btn-cyber">Verify Account</button>
-                </form>
+            <div class="login-wrapper">
+                <div class="login-card">
+                    <h3>Hedma Secure Access</h3>
+                    <p class="login-sub">Connect to the admin inventory manager</p>
+                    <form id="login-form" onsubmit="handleLogin(event)">
+                        <div class="input-group">
+                            <label>OWNER USERNAME</label>
+                            <input type="text" id="login-email" placeholder="owner" required>
+                        </div>
+                        <div class="input-group">
+                            <label>SECURITY PASSWORD</label>
+                            <input type="password" id="login-pass" placeholder="••••••••" required>
+                        </div>
+                        <button type="submit" class="btn-verify">VERIFY ACCOUNT</button>
+                    </form>
+                </div>
             </div>
         </section>
 
         <section id="screen-owner" class="screen">
-            <div class="dashboard-grid">
-                <div class="panel-cyber">
+            <div class="admin-dashboard">
+                <div class="admin-panel-card">
                     <h3 id="panel-title">Product Control Form</h3>
                     <form id="product-form" onsubmit="handleProductSubmit(event)">
                         <input type="hidden" id="edit-index" value="">
                         
                         <div class="input-group">
-                            <label>Clothing Item Name</label>
-                            <input type="text" id="prod-name" required placeholder="Premium Cotton Hoodie">
+                            <label>CLOTHING ITEM NAME</label>
+                            <input type="text" id="prod-name" placeholder="Premium Cotton Hoodie" required>
                         </div>
                         
                         <div class="input-group">
-                            <label>Product Category</label>
+                            <label>PRODUCT CATEGORY</label>
                             <select id="prod-cat" required>
                                 <option value="T-Shirts">T-Shirts</option>
                                 <option value="Shoes">Shoes</option>
@@ -70,62 +108,65 @@
                                 <option value="Belts">Belts</option>
                             </select>
                         </div>
-
+                        
                         <div class="input-group">
-                            <label>Price (EGP)</label>
-                            <input type="number" id="prod-price" required placeholder="850">
+                            <label>PRICE (EGP)</label>
+                            <input type="number" id="prod-price" placeholder="850" required>
                         </div>
+                        
                         <div class="input-group">
-                            <label>Stock Quantity</label>
-                            <input type="number" id="prod-qty" required placeholder="25">
+                            <label>STOCK QUANTITY</label>
+                            <input type="number" id="prod-qty" placeholder="25" required>
                         </div>
                         
                         <div class="file-upload-wrapper">
-                            <label for="prod-image" class="file-upload-label" id="file-label">
-                                Upload Product Image Asset
-                            </label>
-                            <input type="file" id="prod-image" accept="image/*" style="display:none;" onchange="processImage(this)">
+                            <input type="file" id="prod-img" accept="image/*" onchange="processImage(this)">
+                            <label for="prod-img" id="file-label">Upload Product Image Asset</label>
                         </div>
                         
-                        <button type="submit" class="btn-cyber" id="btn-submit-prod">Save Item To Store</button>
-                        <div id="action-msg"></div>
+                        <button type="submit" id="btn-submit-prod" class="btn-verify">SAVE ITEM TO STORE</button>
                     </form>
+                    <p id="action-msg" style="text-align: center; margin-top: 10px; font-weight: bold;"></p>
                 </div>
 
-                <div class="panel-cyber">
+                <div class="admin-table-card">
                     <h3>Store Inventory Database</h3>
-                    <div class="table-container">
+                    <div class="table-responsive">
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Image</th>
-                                    <th>Product Name</th>
-                                    <th>Category</th>
-                                    <th>Price</th>
-                                    <th>Stock</th>
-                                    <th>Actions</th>
+                                    <th>IMAGE</th>
+                                    <th>PRODUCT NAME</th>
+                                    <th>CATEGORY</th>
+                                    <th>PRICE</th>
+                                    <th>STOCK</th>
+                                    <th>ACTIONS</th>
                                 </tr>
                             </thead>
-                            <tbody id="admin-table-body"></tbody>
+                            <tbody id="admin-table-body">
+                                </tbody>
                         </table>
                     </div>
                 </div>
             </div>
         </section>
+    </main>
 
-        <section id="screen-catalog" class="screen active">
-            <div class="catalog-header">
-                <h1 onclick="filterCatalog('all')" style="cursor:pointer;">HEDMA STORE</h1>
-                <p style="color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px;">Premium Men's Clothing</p>
+    <div id="cart-sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <h3>Your Shopping Basket</h3>
+            <button class="close-btn" onclick="toggleCart()">&times;</button>
+        </div>
+        <div class="sidebar-body" id="cart-items-container">
             </div>
-
-            <div class="products-grid" id="catalog-products-grid"></div>
-        </section>
-
+        <div class="sidebar-footer">
+            <div class="total-bar">
+                <span>Estimated Total:</span>
+                <span id="cart-total-price">0 EGP</span>
+            </div>
+            <button class="checkout-btn" onclick="processCheckout()">Secure Checkout</button>
+        </div>
     </div>
-
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <script src="script.js"></script>
 </body>
