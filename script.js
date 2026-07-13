@@ -1,27 +1,46 @@
-// مصفوفة المنتجات تبدأ فارغة تماماً ولا تحتوي على كاردات تلقائية
+// ==========================================
+// 1. إعدادات السيرفر وقاعدة البيانات الحقيقية من حسابك
+// ==========================================
+const firebaseConfig = {
+    apiKey: "AIzaSyCDt5yVhHtoh-InNyv-NGNBwNdAlHoEiCw",
+    authDomain: "hedma-559bf.firebaseapp.com",
+    databaseURL: "https://hedma-559bf-default-rtdb.firebaseio.com",
+    projectId: "hedma-559bf",
+    storageBucket: "hedma-559bf.firebasestorage.app",
+    messagingSenderId: "738050128018",
+    appId: "1:738050128018:web:f9e9659711752a6cd58e4b"
+};
+
+// تهشير وتشغيل الفايربيز
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
 let dbProducts = [];
 let base64ImageStr = "";
 let isOwnerSession = false;
 let currentFilter = "all";
 
-// بدء تشغيل المتجر وقراءة البيانات المضافة من الـ LocalStorage فقط
+// ==========================================
+// 2. المزامنة السحابية اللحظية (Realtime Synchronization)
+// ==========================================
 window.addEventListener("DOMContentLoaded", () => {
-    let localCache = localStorage.getItem("hedma_cyber_db");
-    if (localCache) {
-        dbProducts = JSON.parse(localCache);
-    } else {
-        dbProducts = []; // مصفوفة فارغة تماماً بدون تدخل الأونر
-        updateCacheStorage();
-    }
-    refreshCatalogGrid();
-    refreshAdminGrid();
+    // جلب البيانات من السحابة في ثوانٍ، وأي تحديث ينعكس فوراً على كل الأجهزة
+    database.ref('products').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+            dbProducts = Object.keys(data).map(key => ({
+                id: key, // مفتاح المنتج الفريد المخزن بالكامل على السيرفر لتعديله أو مسحه
+                ...data[key]
+            }));
+        } else {
+            dbProducts = [];
+        }
+        refreshCatalogGrid();
+        refreshAdminGrid();
+    });
 });
 
-function updateCacheStorage() {
-    localStorage.setItem("hedma_cyber_db", JSON.stringify(dbProducts));
-}
-
-// موجه التنقل بين شاشات المتجر
+// توجيه الشاشات
 function switchScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(`screen-${screenId}`).classList.add('active');
@@ -37,7 +56,7 @@ function switchScreen(screenId) {
     }
 }
 
-// نظام التحقق وتوثيق الدخول الخاص بالأونر
+// دالة التحقق من بيانات الأونر
 function handleLogin(e) {
     e.preventDefault();
     let email = document.getElementById("login-email").value.trim();
@@ -57,7 +76,7 @@ function logoutSession() {
     switchScreen('catalog');
 }
 
-// تحويل الصورة المرفوعة إلى Base64 لحفظها في المتصفح بنجاح
+// تحويل ملف الصورة لنص باينري للرفع
 function processImage(inputNode) {
     let file = inputNode.files[0];
     let label = document.getElementById("file-label");
@@ -72,7 +91,9 @@ function processImage(inputNode) {
     }
 }
 
-// معالجة وحفظ المنتجات المضافة بواسطة الأونر فقط
+// ==========================================
+// 3. إضافة وتعديل المنتجات سحابياً
+// ==========================================
 function handleProductSubmit(e) {
     e.preventDefault();
     let name = document.getElementById("prod-name").value.trim();
@@ -88,28 +109,32 @@ function handleProductSubmit(e) {
         return;
     }
 
-    let productData = { name, category, price, qty, image: base64ImageStr };
+    let productData = { name, category, price, qty };
 
     if(editIdx === "") {
-        dbProducts.push(productData);
-        msgBox.innerText = "Product Added Successfully!";
+        // دفع منتج جديد للسيرفر السحابي ليعرض فوراً
+        productData.image = base64ImageStr;
+        database.ref('products').push(productData);
+        msgBox.innerText = "Product Synchronized to Cloud!";
         msgBox.style.color = "var(--neon-cyan)";
     } else {
+        // تحديث المنتج الحالي على الفايربيز عن طريق معرفه الفريد (id)
         let idx = parseInt(editIdx);
+        let productId = dbProducts[idx].id;
+        
         if(base64ImageStr === "") {
             productData.image = dbProducts[idx].image;
+        } else {
+            productData.image = base64ImageStr;
         }
-        dbProducts[idx] = productData;
-        msgBox.innerText = "Product Data Committed & Updated!";
+        
+        database.ref('products/' + productId).set(productData);
+        msgBox.innerText = "Product Updated Globally Across Devices!";
         msgBox.style.color = "var(--neon-cyan)";
         resetFormState();
     }
 
-    updateCacheStorage();
-    refreshCatalogGrid();
-    refreshAdminGrid();
-    
-    if(editIdx === "") document.getElementById("product-form").reset();
+    document.getElementById("product-form").reset();
     document.getElementById("file-label").innerText = "Upload Product Image Asset";
     document.getElementById("file-label").classList.remove("selected");
     base64ImageStr = "";
@@ -121,14 +146,13 @@ function resetFormState() {
     document.getElementById("btn-submit-prod").innerText = "Save Item To Store";
 }
 
-// نظام فئات التصفية (Filter) لقسم الكتالوج والتسوق
 function filterCatalog(category) {
     currentFilter = category;
     switchScreen('catalog');
     refreshCatalogGrid();
 }
 
-// بناء وعرض الكاردات بشكل ديناميكي (فقط إذا أضاف الأونر منتجات)
+// عرض كتالوج المنتجات للمستخدم
 function refreshCatalogGrid() {
     let grid = document.getElementById("catalog-products-grid");
     grid.innerHTML = "";
@@ -136,7 +160,7 @@ function refreshCatalogGrid() {
     let visibleProducts = dbProducts.filter(p => currentFilter === "all" || p.category === currentFilter);
 
     if(visibleProducts.length === 0) {
-        grid.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color: var(--text-muted); padding: 40px 0;">No items found. Owner needs to add items first.</p>`;
+        grid.innerHTML = `<p style="grid-column: 1/-1; text-align:center; color: var(--text-muted); padding: 40px 0;">No items found in this section.</p>`;
         return;
     }
 
@@ -167,7 +191,7 @@ function refreshCatalogGrid() {
     });
 }
 
-// تحديث جدول إدارة المخزون في لوحة التحكم الخاصة بالأونر
+// عرض لوحة الإدارة للمالك
 function refreshAdminGrid() {
     let tbody = document.getElementById("admin-table-body");
     tbody.innerHTML = "";
@@ -204,12 +228,13 @@ function triggerEditProduct(idx) {
     document.getElementById("file-label").innerText = "Keep asset or load replacement";
 }
 
+// ==========================================
+// 4. حذف المنتجات سحابياً بشكل فوري
+// ==========================================
 function triggerDeleteProduct(idx) {
-    if(confirm("Are you sure you want to completely remove this item from the store?")) {
-        dbProducts.splice(idx, 1);
-        updateCacheStorage();
-        refreshCatalogGrid();
-        refreshAdminGrid();
+    if(confirm("Are you sure you want to completely remove this item from the cloud database?")) {
+        let productId = dbProducts[idx].id;
+        database.ref('products/' + productId).remove();
         resetFormState();
     }
 }

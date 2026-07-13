@@ -28,7 +28,6 @@ body {
     flex-direction: column;
 }
 
-/* Cyber Grid Background Effect */
 body::before {
     content: '';
     position: fixed;
@@ -39,7 +38,6 @@ body::before {
     z-index: -1;
 }
 
-/* Top Header Navigation */
 header {
     background: rgba(20, 23, 42, 0.8);
     backdrop-filter: blur(10px);
@@ -66,7 +64,6 @@ header {
     cursor: pointer;
 }
 
-/* Navbar links container */
 .nav-links {
     display: flex;
     gap: 25px;
@@ -88,7 +85,6 @@ header {
     text-shadow: 0 0 8px rgba(0, 242, 254, 0.5);
 }
 
-/* Wrapper for buttons */
 .right-nav {
     display: flex;
     align-items: center;
@@ -112,7 +108,6 @@ header button:hover {
     box-shadow: var(--neon-shadow);
 }
 
-/* Container Layout */
 .container {
     max-width: 1200px;
     width: 100%;
@@ -121,7 +116,6 @@ header button:hover {
     flex-grow: 1;
 }
 
-/* Multi-screen Manager */
 .screen {
     display: none;
 }
@@ -130,7 +124,6 @@ header button:hover {
     animation: fadeIn 0.5s ease forwards;
 }
 
-/* ================= DESIGN: LOGIN PORTAL ================= */
 .login-card {
     background: var(--bg-panel);
     border: 1px solid #22294f;
@@ -221,7 +214,6 @@ header button:hover {
     box-shadow: var(--neon-shadow);
 }
 
-/* ================= DESIGN: OWNER DASHBOARD ================= */
 .dashboard-grid {
     display: grid;
     grid-template-columns: 1fr 1.8fr;
@@ -268,7 +260,6 @@ header button:hover {
     min-height: 20px;
 }
 
-/* Admin Table */
 .table-container {
     overflow-x: auto;
 }
@@ -317,7 +308,6 @@ td {
 .btn-mini.edit { background: #ffd000; color: #000; }
 .btn-mini.delete { background: #ff4d4d; color: #fff; }
 
-/* ================= DESIGN: CATALOG SHOWCASE ================= */
 .catalog-header {
     text-align: center;
     margin-bottom: 40px;
@@ -333,14 +323,12 @@ td {
     letter-spacing: 3px;
 }
 
-/* Products Grid style */
 .products-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 30px;
 }
 
-/* The Neon Cyber Card */
 .cyber-card {
     background: var(--bg-panel);
     border: 1px solid #22294f;
@@ -380,7 +368,6 @@ td {
     transform: scale(1.06);
 }
 
-/* Category badge style on product card */
 .category-badge {
     position: absolute;
     top: 15px;
@@ -397,7 +384,6 @@ td {
     z-index: 2;
 }
 
-/* Bottom Glowing Accent Line */
 .glowing-bar {
     position: absolute;
     bottom: 0; left: 0; width: 100%; height: 3px;
@@ -420,7 +406,6 @@ td {
     text-overflow: ellipsis;
 }
 
-/* Price and Stock tags */
 .card-details-box {
     display: flex;
     justify-content: space-between;
@@ -466,40 +451,16 @@ td {
     box-shadow: var(--neon-shadow);
 }
 
-/* Base Animations */
 @keyframes fadeIn { 
     from { opacity: 0; transform: translateY(15px); } 
     to { opacity: 1; transform: translateY(0); } 
 }
 
-/* =========================================================
-   MEDIA QUERIES (التجاوب الكامل للموبايل والشاشات الصغيرة)
-   ========================================================= */
 @media (max-width: 850px) {
-    header {
-        padding: 15px 20px;
-    }
-    
-    .logo-area {
-        font-size: 22px;
-    }
-
-    /* إخفاء شريط الفئات العلوية بالموبايل أو جعلها قابلة للتمرير */
-    .nav-links {
-        display: none; /* تم إخفاؤها للموبايل لمنع ازدحام الـ الهيدر */
-    }
-
-    .dashboard-grid { 
-        grid-template-columns: 1fr; /* جعل الفلو عمودي لوحة التحكم للموبايل */
-        gap: 20px;
-    }
-
-    .catalog-header h1 {
-        font-size: 34px;
-    }
-    
-    .login-card {
-        padding: 30px 20px;
-        margin: 20px auto;
-    }
+    header { padding: 15px 20px; }
+    .logo-area { font-size: 22px; }
+    .nav-links { display: none; }
+    .dashboard-grid { grid-template-columns: 1fr; gap: 20px; }
+    .catalog-header h1 { font-size: 34px; }
+    .login-card { padding: 30px 20px; margin: 20px auto; }
 }
